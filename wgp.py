@@ -2899,13 +2899,40 @@ def abort_generation(state):
 def refresh_gallery(state): #, msg
     gen = get_gen_info(state)
 
-    # gen["last_msg"] = msg
-    file_list = gen.get("file_list", None)      
+        # gen["last_msg"] = msg
+    file_list = gen.get("file_list", [])
+    file_settings_list = gen.get("file_settings_list", [])
+
+    # Filter out files that no longer exist, keeping lists in sync.
+    if file_list:
+        original_count = len(file_list)
+        # Ensure settings list is same length to prevent zip from truncating
+        if len(file_settings_list) < original_count:
+            file_settings_list.extend([None] * (original_count - len(file_settings_list)))
+        
+        # Pair up, filter, and then re-separate
+        paired_list = [(f, s) for f, s in zip(file_list, file_settings_list) if os.path.exists(f)]
+        
+        if len(paired_list) < original_count:
+            print(f"Gallery refresh: Removed {original_count - len(paired_list)} missing file(s) from view.")
+            if paired_list:
+                file_list, file_settings_list = [list(t) for t in zip(*paired_list)]
+            else:
+                file_list, file_settings_list = [], []
+            
+            # Update the state with the corrected lists
+            gen["file_list"] = file_list
+            gen["file_settings_list"] = file_settings_list
+    
     choice = gen.get("selected",0)
     in_progress = "in_progress" in gen
     if in_progress:
         if gen.get("last_selected", True):
-            choice = max(len(file_list) - 1,0)  
+            choice = max(len(file_list) - 1, 0)
+    
+    # After filtering, ensure choice is valid before using it
+    choice = min(choice, len(file_list) - 1 if file_list else 0)
+    set_file_choice(gen, file_list, choice)
 
     queue = gen.get("queue", [])
     abort_interactive = not gen.get("abort", False)
@@ -3032,6 +3059,10 @@ def select_video(state, input_file_list, event_data: gr.EventData):
     if len(file_list) > 0:
         configs = file_settings_list[choice]
         file_name = file_list[choice]
+        if not os.path.exists(file_name):
+            gr.Warning(f"File not found: {os.path.basename(file_name)}. It may have been moved or deleted.")
+            visible = False
+            return choice, get_default_video_info(), gr.update(visible=visible), gr.update(visible=visible), gr.update(visible=visible) , gr.update(visible=visible)
         values = [  os.path.basename(file_name)]
         labels = [ "File Name"]
         misc_values= []
