@@ -2895,74 +2895,92 @@ def abort_generation(state):
         return gr.Button(interactive=  True)
 
 
-
-def refresh_gallery(state): #, msg
-    gen = get_gen_info(state)
-
-        # gen["last_msg"] = msg
+def cleanup_missing_files(gen):
     file_list = gen.get("file_list", [])
     file_settings_list = gen.get("file_settings_list", [])
 
-    # Filter out files that no longer exist, keeping lists in sync.
-    if file_list:
-        original_count = len(file_list)
-        # Ensure settings list is same length to prevent zip from truncating
-        if len(file_settings_list) < original_count:
-            file_settings_list.extend([None] * (original_count - len(file_settings_list)))
-        
-        # Pair up, filter, and then re-separate
-        paired_list = [(f, s) for f, s in zip(file_list, file_settings_list) if os.path.exists(f)]
-        
-        if len(paired_list) < original_count:
-            print(f"Gallery refresh: Removed {original_count - len(paired_list)} missing file(s) from view.")
-            if paired_list:
-                file_list, file_settings_list = [list(t) for t in zip(*paired_list)]
-            else:
-                file_list, file_settings_list = [], []
-            
-            # Update the state with the corrected lists
-            gen["file_list"] = file_list
-            gen["file_settings_list"] = file_settings_list
-    
-    choice = gen.get("selected",0)
+    if not file_list:
+        return 0
+
+    original_count = len(file_list)
+
+    valid_items = [
+        (file_path, file_settings_list[i] if i < len(file_settings_list) else None)
+        for i, file_path in enumerate(file_list)
+        if os.path.exists(file_path)
+    ]
+
+    removed_count = original_count - len(valid_items)
+
+    if removed_count > 0:
+        print(f"Gallery refresh: Removed {removed_count} missing file(s) from view.")
+        if valid_items:
+            gen["file_list"], gen["file_settings_list"] = zip(*valid_items)
+            gen["file_list"] = list(gen["file_list"])
+            gen["file_settings_list"] = list(gen["file_settings_list"])
+        else:
+            gen["file_list"] = []
+            gen["file_settings_list"] = []
+
+    return removed_count
+
+
+def refresh_gallery(state):  # , msg
+    gen = get_gen_info(state)
+
+    # Clean up any missing files first
+    cleanup_missing_files(gen)
+
+    # Now get the cleaned file list
+    file_list = gen.get("file_list", [])
+    choice = gen.get("selected", 0)
     in_progress = "in_progress" in gen
+
     if in_progress:
         if gen.get("last_selected", True):
             choice = max(len(file_list) - 1, 0)
-    
-    # After filtering, ensure choice is valid before using it
+
+    # Ensure choice is valid after cleanup
     choice = min(choice, len(file_list) - 1 if file_list else 0)
-    set_file_choice(gen, file_list, choice)
 
     queue = gen.get("queue", [])
     abort_interactive = not gen.get("abort", False)
+
     if not in_progress or len(queue) == 0:
-        return gr.Gallery(selected_index=choice, value = file_list), gr.HTML("", visible= False),  gr.Button(visible=True), gr.Button(visible=False), gr.Row(visible=False), gr.Row(visible=False), update_queue_data(queue), gr.Button(interactive=  abort_interactive), gr.Button(visible= False)
+        return gr.Gallery(selected_index=choice, value=file_list), gr.HTML("", visible=False), gr.Button(
+            visible=True), gr.Button(visible=False), gr.Row(visible=False), gr.Row(visible=False), update_queue_data(
+            queue), gr.Button(interactive=abort_interactive), gr.Button(visible=False)
     else:
         task = queue[0]
         start_img_md = ""
         end_img_md = ""
-        prompt =  task["prompt"]
+        prompt = task["prompt"]
         params = task["params"]
-        model_type = params["model_type"] 
+        model_type = params["model_type"]
         base_model_type = get_base_model_type(model_type)
-        model_def = get_model_def(model_type) 
+        model_def = get_model_def(model_type)
         is_image = model_def.get("image_outputs", False)
-        onemorewindow_visible = test_any_sliding_window(base_model_type) and params.get("image_mode",0) == 0 and not params.get("mode","").startswith("edit_")
+        onemorewindow_visible = test_any_sliding_window(base_model_type) and params.get("image_mode",
+                                                                                        0) == 0 and not params.get(
+            "mode", "").startswith("edit_")
         enhanced = False
-        if  prompt.startswith("!enhanced!\n"):
+
+        if prompt.startswith("!enhanced!\n"):
             enhanced = True
             prompt = prompt[len("!enhanced!\n"):]
-        if "\n" in prompt :
+
+        if "\n" in prompt:
             prompts = prompt.split("\n")
-            window_no= gen.get("window_no",1)
+            window_no = gen.get("window_no", 1)
             if window_no > len(prompts):
                 window_no = len(prompts)
             window_no -= 1
-            prompts[window_no]="<B>" + prompts[window_no] + "</B>"
+            prompts[window_no] = "<B>" + prompts[window_no] + "</B>"
             prompt = "<BR><DIV style='height:8px'></DIV>".join(prompts)
+
         if enhanced:
             prompt = "<U><B>Enhanced:</B></U><BR>" + prompt
+
         list_uri = []
         list_labels = []
         start_img_uri = task.get('start_image_data_base64')
@@ -2976,12 +2994,12 @@ def refresh_gallery(state): #, msg
 
         thumbnail_size = "100px"
         thumbnails = ""
-        for i, (img_label, img_uri) in enumerate(zip(list_labels,list_uri)):
-            thumbnails += f'<TD onclick=sendColIndex({i})><div class="hover-image" ><img src="{img_uri}" alt="{img_label}" style="max-width:{thumbnail_size}; max-height:{thumbnail_size}; display: block; margin: auto; object-fit: contain;" /><span class="tooltip">{img_label}</span></div></TD>'  
-        
-        # Get current theme from server config  
+        for i, (img_label, img_uri) in enumerate(zip(list_labels, list_uri)):
+            thumbnails += f'<TD onclick=sendColIndex({i})><div class="hover-image" ><img src="{img_uri}" alt="{img_label}" style="max-width:{thumbnail_size}; max-height:{thumbnail_size}; display: block; margin: auto; object-fit: contain;" /><span class="tooltip">{img_label}</span></div></TD>'
+
+            # Get current theme from server config
         current_theme = server_config.get("UI_theme", "default")
-        
+
         # Use minimal, adaptive styling that blends with any background
         # This creates a subtle container that doesn't interfere with the page's theme
         table_style = """
@@ -2992,11 +3010,14 @@ def refresh_gallery(state): #, msg
             border-radius: 6px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         """
-        if params.get("mode", None) in ['edit'] : onemorewindow_visible = False
+        if params.get("mode", None) in ['edit']:
+            onemorewindow_visible = False
         gen_buttons_visible = True
-        html =  f"<TABLE WIDTH=100% ID=PINFO style='{table_style}'><TR style='height:140px'><TD width=100% style='{table_style}'>" + prompt + "</TD>" + thumbnails + "</TR></TABLE>" 
-        html_output = gr.HTML(html, visible= True)
-        return gr.Gallery(selected_index=choice, value = file_list), html_output, gr.Button(visible=False), gr.Button(visible=True), gr.Row(visible=True), gr.Row(visible= gen_buttons_visible), update_queue_data(queue), gr.Button(interactive=  abort_interactive), gr.Button(visible= onemorewindow_visible)
+        html = f"<TABLE WIDTH=100% ID=PINFO style='{table_style}'><TR style='height:140px'><TD width=100% style='{table_style}'>" + prompt + "</TD>" + thumbnails + "</TR></TABLE>"
+        html_output = gr.HTML(html, visible=True)
+        return gr.Gallery(selected_index=choice, value=file_list), html_output, gr.Button(visible=False), gr.Button(
+            visible=True), gr.Row(visible=True), gr.Row(visible=gen_buttons_visible), update_queue_data(
+            queue), gr.Button(interactive=abort_interactive), gr.Button(visible=onemorewindow_visible)
 
 
 
