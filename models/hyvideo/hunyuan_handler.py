@@ -50,6 +50,12 @@ class family_handler():
         extra_model_def["cfg_star"] =  base_model_type in [ "hunyuan_avatar", "hunyuan_custom_audio", "hunyuan_custom_edit", "hunyuan_custom"]
         extra_model_def["tea_cache"] = True
         extra_model_def["mag_cache"] = True
+
+        if base_model_type in ["hunyuan_avatar"]: extra_model_def["no_background_removal"] = True
+
+        if base_model_type in ["hunyuan_custom", "hunyuan_custom_edit", "hunyuan_audio", "hunyuan_avatar"]:
+            extra_model_def["one_image_ref_needed"] = True
+
         return extra_model_def
 
     @staticmethod
@@ -167,5 +173,5 @@ class family_handler():
                 "remove_background_images_ref": 0,
                 "skip_steps_start_step_perc": 25, 
                 "video_length": 129,
-                "video_prompt_type": "I",
+                "video_prompt_type": "KI",
             })
