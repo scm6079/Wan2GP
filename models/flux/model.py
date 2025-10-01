@@ -12,6 +12,7 @@ from .modules.layers import (
     timestep_embedding,
     DistilledGuidance,
     ChromaModulationOut,
+    SigLIPMultiFeatProjModel,
 )
 from .modules.lora import LinearLora, replace_linear_with_lora
 
@@ -32,7 +33,7 @@ class FluxParams:
     qkv_bias: bool
     guidance_embed: bool
     chroma: bool = False
-
+    eso: bool = False
 
 class Flux(nn.Module):
     """
@@ -189,6 +190,23 @@ class Flux(nn.Module):
                             v = swap_scale_shift(v)
                         k = k.replace("norm_out.linear", "final_layer.adaLN_modulation.1")            
                 new_sd[k] = v
+        # elif not first_key.startswith("diffusion_model.") and not first_key.startswith("transformer."):
+        #     for k,v in sd.items():
+        #         if "double" in k:
+        #             k = k.replace(".processor.proj_lora1.", ".img_attn.proj.lora_")
+        #             k = k.replace(".processor.proj_lora2.", ".txt_attn.proj.lora_")
+        #             k = k.replace(".processor.qkv_lora1.", ".img_attn.qkv.lora_")
+        #             k = k.replace(".processor.qkv_lora2.", ".txt_attn.qkv.lora_")
+        #         else:
+        #             k = k.replace(".processor.qkv_lora.", ".linear1_qkv.lora_")
+        #             k = k.replace(".processor.proj_lora.", ".linear2.lora_")
+
+        #         k = "diffusion_model." + k
+        #         new_sd[k] = v
+        #     from mmgp import safetensors2
+        #     safetensors2.torch_write_file(new_sd, "fff.safetensors")
+        else:
+            new_sd = sd
         return new_sd    
 
     def forward(
@@ -198,11 +216,13 @@ class Flux(nn.Module):
         txt_list,
         txt_ids_list,
         timesteps: Tensor,
-        y: Tensor,
+        y_list,
+        img_len = 0,
         guidance: Tensor | None = None,
         callback= None,
         pipeline =None,
-
+        siglip_embedding = None,
+        siglip_embedding_ids = None,
     ) -> Tensor:
 
         sz = len(txt_list)        
@@ -226,40 +246,44 @@ class Flux(nn.Module):
                 if guidance is None:
                     raise ValueError("Didn't get guidance strength for guidance distilled model.")
                 vec +=  self.guidance_in(timestep_embedding(guidance, 256))
-            vec +=  self.vector_in(y)
+            vec_list = [ vec + self.vector_in(y) for y in y_list]
 
         img = None
         txt_list = [self.txt_in(txt) for txt in txt_list ]
+        if siglip_embedding is not None:
+            txt_list = [torch.cat((siglip_embedding, txt) , dim=1) for txt in txt_list]
+            txt_ids_list = [torch.cat((siglip_embedding_ids, txt_id) , dim=1) for txt_id in txt_ids_list]
+
         pe_list = [self.pe_embedder(torch.cat((txt_ids, img_ids), dim=1)) for txt_ids in txt_ids_list] 
 
         for i, block in enumerate(self.double_blocks):
-            if self.chroma: vec = ( self.get_modulations(mod_vectors, "double_img", idx=i), self.get_modulations(mod_vectors, "double_txt", idx=i))
+            if self.chroma: vec_list = [( self.get_modulations(mod_vectors, "double_img", idx=i), self.get_modulations(mod_vectors, "double_txt", idx=i))] * sz
             if callback != None:
                 callback(-1, None, False, True)
             if pipeline._interrupt:
                 return [None] * sz
-            for img, txt, pe in zip(img_list, txt_list, pe_list):
+            for img, txt, pe, vec in zip(img_list, txt_list, pe_list, vec_list):
                 img[...], txt[...] = block(img=img, txt=txt, vec=vec, pe=pe)
-                img = txt = pe = None
+                img = txt = pe = vec= None
 
         img_list = [torch.cat((txt, img), 1) for txt, img in zip(txt_list, img_list)]
 
         for i, block in enumerate(self.single_blocks):
-            if self.chroma: vec = self.get_modulations(mod_vectors, "single", idx=i)
+            if self.chroma: vec_list= [self.get_modulations(mod_vectors, "single", idx=i)] * sz
             if callback != None:
                 callback(-1, None, False, True)
             if pipeline._interrupt:
                 return [None] * sz
-            for img, pe in zip(img_list, pe_list):
+            for img, pe, vec in zip(img_list, pe_list, vec_list):
                 img[...]= block(x=img, vec=vec, pe=pe)
-                img = pe = None
-        img_list = [ img[:, txt.shape[1] :, ...] for img, txt in zip(img_list, txt_list)]
+                img = pe = vec = None
+        img_list = [ img[:, txt.shape[1] : txt.shape[1] + img_len, ...] for img, txt in zip(img_list, txt_list)]
 
-        if self.chroma: vec = self.get_modulations(mod_vectors, "final")
+        if self.chroma: vec_list = [self.get_modulations(mod_vectors, "final")] * sz
         out_list = []
-        for i, img in enumerate(img_list):
+        for i, (img, vec) in enumerate(zip(img_list, vec_list)):
             out_list.append( self.final_layer(img, vec)) # (N, T, patch_size ** 2 * out_channels)
-            img_list[i] = img = None
+            img_list[i] = img = vec = None
         return out_list
 
 
