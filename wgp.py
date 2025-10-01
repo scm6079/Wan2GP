@@ -3,7 +3,7 @@ os.environ["GRADIO_LANG"] = "en"
 # # os.environ.pop("TORCH_LOGS", None)  # make sure no env var is suppressing/overriding
 # os.environ["TORCH_LOGS"]= "recompiles"
 import torch._logging as tlog
-# tlog.set_logs(recompiles=True, guards=True, graph_breaks=True)
+# tlog.set_logs(recompiles=True, guards=True, graph_breaks=True)    
 import time
 import sys
 import threading
@@ -89,7 +89,7 @@ def clear_gen_cache():
 
 def release_model():
     global wan_model, offloadobj, reload_needed
-    wan_model = None
+    wan_model = None    
     clear_gen_cache()
     offload.shared_state
     if offloadobj is not None:
@@ -191,11 +191,11 @@ def compute_sliding_window_no(current_video_length, sliding_window_size, discard
 
 def clean_image_list(gradio_list):
     if not isinstance(gradio_list, list): gradio_list = [gradio_list]
-    gradio_list = [ tup[0] if isinstance(tup, tuple) else tup for tup in gradio_list ]
+    gradio_list = [ tup[0] if isinstance(tup, tuple) else tup for tup in gradio_list ]        
 
     if any( not isinstance(image, (Image.Image, str))  for image in gradio_list): return None
     if any( isinstance(image, str) and not has_image_file_extension(image) for image in gradio_list): return None
-    gradio_list = [ convert_image( Image.open(img) if isinstance(img, str) else img  ) for img in gradio_list  ]
+    gradio_list = [ convert_image( Image.open(img) if isinstance(img, str) else img  ) for img in gradio_list  ]        
     return gradio_list
 
 
@@ -203,7 +203,7 @@ def clean_image_list(gradio_list):
 def process_prompt_and_add_tasks(state, model_choice):
     def ret():
         return gr.update(), gr.update()
-
+    
     if state.get("validate_success",0) != 1:
         ret()
     
@@ -397,7 +397,7 @@ def process_prompt_and_add_tasks(state, model_choice):
         if len(frames_positions.strip()) > 0:
             positions = frames_positions.replace(","," ").split(" ")
             for pos_str in positions:
-                if not pos_str in ["L", "l"] and len(pos_str)>0:
+                if not pos_str in ["L", "l"] and len(pos_str)>0: 
                     if not is_integer(pos_str):
                         gr.Info(f"Invalid Frame Position '{pos_str}'")
                         return ret()
@@ -523,13 +523,13 @@ def process_prompt_and_add_tasks(state, model_choice):
         if image_start == None or isinstance(image_start, list) and len(image_start) == 0:
             gr.Info("You must provide a Start Image")
             return ret()
-        image_start = clean_image_list(image_start)
+        image_start = clean_image_list(image_start)        
         if image_start == None :
             gr.Info("Start Image should be an Image") 
             return ret()
         if  multi_prompts_gen_type == 1 and len(image_start) > 1:
-            gr.Info("Only one Start Image is supported")
-            return ret()
+            gr.Info("Only one Start Image is supported") 
+            return ret()       
     else:
         image_start = None
 
@@ -539,7 +539,7 @@ def process_prompt_and_add_tasks(state, model_choice):
         if image_end == None or isinstance(image_end, list) and len(image_end) == 0:
             gr.Info("You must provide an End Image") 
             return ret()
-        image_end = clean_image_list(image_end)
+        image_end = clean_image_list(image_end)        
         if image_end == None :
             gr.Info("End Image should be an Image") 
             return ret()
@@ -547,10 +547,10 @@ def process_prompt_and_add_tasks(state, model_choice):
             if video_source is not None:
                 if len(image_end)> 1:
                     gr.Info("If a Video is to be continued and the option 'Each Text Prompt Will create a new generated Video' is set, there can be only one End Image")
-                    return ret()
+                    return ret()        
             elif len(image_start or []) != len(image_end or []):
                 gr.Info("The number of Start and End Images should be the same when the option 'Each Text Prompt Will create a new generated Video'")
-                return ret()
+                return ret()    
     else:        
         image_end = None
 
@@ -558,7 +558,7 @@ def process_prompt_and_add_tasks(state, model_choice):
     if test_any_sliding_window(model_type) and image_mode == 0:
         if video_length > sliding_window_size:
             if model_type in ["t2v"] and not "G" in video_prompt_type :
-                gr.Info(f"You have requested to Generate Sliding Windows with a Text to Video model. Unless you use the Video to Video feature this is useless as a t2v model doesn't see past frames and it will generate the same video in each new window.")
+                gr.Info(f"You have requested to Generate Sliding Windows with a Text to Video model. Unless you use the Video to Video feature this is useless as a t2v model doesn't see past frames and it will generate the same video in each new window.") 
                 return ret()
             full_video_length = video_length if video_source is None else video_length +  sliding_window_overlap -1
             extra = "" if full_video_length == video_length else f" including {sliding_window_overlap} added for Video Continuation"
@@ -585,7 +585,7 @@ def process_prompt_and_add_tasks(state, model_choice):
             return ret()
 
         # if image_end != None and len(image_end) > 1:
-        #     gr.Info("Only one End Image must be provided if multiple prompts are used for different windows")
+        #     gr.Info("Only one End Image must be provided if multiple prompts are used for different windows") 
         #     return
 
     override_inputs = {
@@ -1950,7 +1950,7 @@ def get_model_min_frames_and_step(model_type):
     frames_minimum = mode_def.get("frames_minimum", 5)
     frames_steps = mode_def.get("frames_steps", 4)
     latent_size = mode_def.get("latent_size", frames_steps)
-    return frames_minimum, frames_steps, latent_size
+    return frames_minimum, frames_steps, latent_size 
     
 def get_model_fps(model_type):
     mode_def = get_model_def(model_type)
@@ -2120,7 +2120,7 @@ def fix_settings(model_type, ui_defaults):
                 audio_prompt_type ="A"
                 ui_defaults["audio_prompt_type"] = audio_prompt_type
 
-    if settings_version < 2.35 and any_audio_track(base_model_type):
+    if settings_version < 2.35 and any_audio_track(base_model_type): 
         audio_prompt_type = audio_prompt_type or ""
         audio_prompt_type += "V"
         ui_defaults["audio_prompt_type"] = audio_prompt_type
@@ -2432,11 +2432,11 @@ def save_model(model, model_type, dtype,  config_file,  submodel_no = 1,  is_mod
         elif not os.path.isfile(quanto_filename):
             offload.save_model(model, quanto_filename, config_file_path=config_file, do_quantize= True, filter_sd=filter)
             print(f"New quantized file '{quanto_filename}' had been created for finetune Id '{model_type}'.")
-            if isinstance(model_def[url_key][0],dict):
-                model_def[url_key][0][url_dict_key].append(quanto_filename)
+            if isinstance(model_def[url_key][0],dict): 
+                model_def[url_key][0][url_dict_key].append(quanto_filename) 
                 saved_finetune_def["model"][url_key][0][url_dict_key].append(quanto_filename)
-            else:
-                model_def[url_key][0].append(quanto_filename)
+            else: 
+                model_def[url_key][0].append(quanto_filename) 
                 saved_finetune_def["model"][url_key][0].append(quanto_filename)
             update_model_def = True
     if update_model_def:
@@ -2498,7 +2498,7 @@ def get_local_model_filename(model_filename):
     else:
         local_model_filename = model_filename
     return local_model_filename
-
+    
 
 
 def process_files_def(repoId, sourceFolderList, fileList):
@@ -2543,7 +2543,7 @@ def download_models(model_filename = None, model_type= None, module_type = False
         "repoId" : "DeepBeepMeep/Wan2.1",
         "sourceFolderList" : [ "pose", "scribble", "flow", "depth", "mask", "wav2vec", "chinese-wav2vec2-base", "roformer", "pyannote", "det_align", "" ],
         "fileList" : [ ["dw-ll_ucoco_384.onnx", "yolox_l.onnx"],["netG_A_latest.pth"],  ["raft-things.pth"], 
-                      ["depth_anything_v2_vitl.pth","depth_anything_v2_vitb.pth"], ["sam_vit_h_4b8939_fp16.safetensors", "model.safetensors", "config.json"],
+                      ["depth_anything_v2_vitl.pth","depth_anything_v2_vitb.pth"], ["sam_vit_h_4b8939_fp16.safetensors", "model.safetensors", "config.json"], 
                       ["config.json", "feature_extractor_config.json", "model.safetensors", "preprocessor_config.json", "special_tokens_map.json", "tokenizer_config.json", "vocab.json"],
                       ["config.json", "pytorch_model.bin", "preprocessor_config.json"],
                       ["model_bs_roformer_ep_317_sdr_12.9755.ckpt", "model_bs_roformer_ep_317_sdr_12.9755.yaml", "download_checks.json"],
@@ -2598,7 +2598,7 @@ def download_models(model_filename = None, model_type= None, module_type = False
     model_def = get_model_def(model_type)
     
     any_source = ("source2" if submodel_no ==2 else "source") in model_def
-    any_module_source = ("module_source2" if submodel_no ==2 else "module_source") in model_def
+    any_module_source = ("module_source2" if submodel_no ==2 else "module_source") in model_def 
     model_type_handler = model_types_handlers[base_model_type]
     local_model_filename = get_local_model_filename(model_filename)
 
@@ -2613,7 +2613,7 @@ def download_models(model_filename = None, model_type= None, module_type = False
             try:
                 download_file(url, local_model_filename)
             except Exception as e:
-                if os.path.isfile(local_model_filename): os.remove(local_model_filename)
+                if os.path.isfile(local_model_filename): os.remove(local_model_filename) 
                 raise Exception(f"'{url}' is invalid for Model '{local_model_filename}' : {str(e)}'")
             if module_type: return
         model_filename = None
@@ -2641,7 +2641,7 @@ def download_models(model_filename = None, model_type= None, module_type = False
                 except Exception as e:
                     if os.path.isfile(filename): os.remove(filename) 
                     raise Exception(f"Lora URL '{url}' is invalid: {str(e)}'")
-    if module_type: return
+    if module_type: return            
     model_files = model_type_handler.query_model_files(computeList, base_model_type, model_filename, text_encoder_quantization)
     if not isinstance(model_files, list): model_files = [model_files]
     for one_repo in model_files:
@@ -2846,7 +2846,7 @@ def load_models(model_type, override_profile = -1):
         transformer_dtype = torch.bfloat16 if "bf16" in model_filename or "BF16" in model_filename else transformer_dtype
         transformer_dtype = torch.float16 if "fp16" in model_filename or"FP16" in model_filename else transformer_dtype
     perc_reserved_mem_max = args.perc_reserved_mem_max
-    vram_safety_coefficient = args.vram_safety_coefficient
+    vram_safety_coefficient = args.vram_safety_coefficient 
     model_file_list = [model_filename]
     model_type_list = [model_type]
     module_type_list = [None]
@@ -2871,7 +2871,7 @@ def load_models(model_type, override_profile = -1):
             model_file_list.append(get_model_filename(model_type, transformer_quantization, transformer_dtype, module_type= module_type))
             model_type_list.append(model_type)
             module_type_list.append(True)
-            model_submodel_no_list.append(0)
+            model_submodel_no_list.append(0) 
     local_model_file_list= []
     for filename, file_model_type, file_module_type, submodel_no in zip(model_file_list, model_type_list, module_type_list, model_submodel_no_list): 
         download_models(filename, file_model_type, file_module_type, submodel_no)
@@ -2880,7 +2880,7 @@ def load_models(model_type, override_profile = -1):
     mixed_precision_transformer =  server_config.get("mixed_precision","0") == "1"
     transformer_type = None
     for module_type, filename in zip(module_type_list, local_model_file_list):
-        if module_type is None:
+        if module_type is None:  
             print(f"Loading Model '{filename}' ...")
         else: 
             print(f"Loading Module '{filename}' ...")
@@ -2896,7 +2896,7 @@ def load_models(model_type, override_profile = -1):
     loras_transformer = ["transformer"]
     if "transformer2" in pipe:
         loras_transformer += ["transformer2"]        
-    offloadobj = offload.profile(pipe, profile_no= profile, compile = compile, quantizeTransformer = False, loras = loras_transformer, coTenantsMap= {}, perc_reserved_mem_max = perc_reserved_mem_max , vram_safety_coefficient = vram_safety_coefficient , convertWeightsFloatTo = transformer_dtype, **kwargs)
+    offloadobj = offload.profile(pipe, profile_no= profile, compile = compile, quantizeTransformer = False, loras = loras_transformer, coTenantsMap= {}, perc_reserved_mem_max = perc_reserved_mem_max , vram_safety_coefficient = vram_safety_coefficient , convertWeightsFloatTo = transformer_dtype, **kwargs)  
     if len(args.gpu) > 0:
         torch.set_default_device(args.gpu)
     transformer_type = model_type
@@ -2925,7 +2925,7 @@ def generate_header(model_type, compile, attention_mode):
 
     description_container = [""]
     get_model_name(model_type, description_container)
-    model_filename = os.path.basename(get_model_filename(model_type, transformer_quantization, transformer_dtype_policy)) or ""
+    model_filename = os.path.basename(get_model_filename(model_type, transformer_quantization, transformer_dtype_policy)) or "" 
     description  = description_container[0]
     header = f"<DIV style=height:{60 if server_config.get('display_stats', 0) == 1 else 40}px>{description}</DIV>"
     overridden_attention = get_overridden_attention(model_type)
@@ -3488,7 +3488,7 @@ def select_video(state, input_file_list, event_data: gr.EventData):
                     if multiple_submodels:
                         video_guidance_scale += f" + Model Switch at {video_switch_threshold if video_model_switch_phase ==1 else video_switch_threshold2}"
             video_flow_shift = configs.get("flow_shift", None)
-            if image_outputs: video_flow_shift = None
+            if image_outputs: video_flow_shift = None 
             video_video_guide_outpainting = configs.get("video_guide_outpainting", "")
             video_outpainting = ""
             if len(video_video_guide_outpainting) > 0  and not video_video_guide_outpainting.startswith("#") \
@@ -3544,9 +3544,9 @@ def select_video(state, input_file_list, event_data: gr.EventData):
             if len(control_net_weight_alt_name) >0:
                 if len(control_net_weight): control_net_weight += ", "
                 control_net_weight += control_net_weight_alt_name + "=" + str(configs.get("control_net_alt", 1))
-            if len(control_net_weight) > 0:
+            if len(control_net_weight) > 0: 
                 values += [control_net_weight]
-                labels += ["Control Net Weights"]
+                labels += ["Control Net Weights"]      
 
             video_skip_steps_cache_type = configs.get("skip_steps_cache_type", "")
             video_skip_steps_multiplier = configs.get("skip_steps_multiplier", 0)
@@ -3603,7 +3603,7 @@ def get_resampled_video(video_in, start_frame, max_frames, target_fps, bridge='t
         video_in = Image.open(video_in)
     if isinstance(video_in, Image.Image):
         return torch.from_numpy(np.array(video_in).astype(np.uint8)).unsqueeze(0)
-
+    
     from shared.utils.utils import resample
 
     import decord
@@ -3774,15 +3774,15 @@ def extract_faces_from_video_with_mask(input_video_path, input_mask_path, max_fr
     if any_mask:
         mask_video = mask_video[:num_frames]
 
-    from preprocessing.face_preprocessor  import FaceProcessor
+    from preprocessing.face_preprocessor  import FaceProcessor 
     face_processor = FaceProcessor()
 
     face_list = []
     for frame_idx in range(num_frames):
-        frame = video[frame_idx].cpu().numpy()
+        frame = video[frame_idx].cpu().numpy() 
         # video[frame_idx] = None
         if any_mask:
-            mask = Image.fromarray(mask_video[frame_idx].cpu().numpy())
+            mask = Image.fromarray(mask_video[frame_idx].cpu().numpy()) 
             # mask_video[frame_idx] = None
             if (frame_width, frame_height) != mask.size:
                 mask = mask.resize((frame_width, frame_height), resample=Image.Resampling.LANCZOS)
@@ -3801,7 +3801,7 @@ def extract_faces_from_video_with_mask(input_video_path, input_mask_path, max_fr
     face_tensor= torch.tensor(np.stack(face_list, dtype= np.float32) / 127.5 - 1).permute(-1, 0, 1, 2 ) # t h w c -> c t h w
     if pad_frames > 0:
         face_tensor= torch.cat([face_tensor[:, -1:].expand(-1, pad_frames, -1, -1), face_tensor ], dim=2)
-
+        
     if args.save_masks:
         from preprocessing.dwpose.pose import save_one_video
         saved_faces_frames = [np.array(face) for face in face_list ]
@@ -3875,7 +3875,7 @@ def preprocess_video_with_mask(input_video_path, input_mask_path, height, width,
 
     if outpainting_dims != None:
         final_height, final_width = height, width
-        height, width, margin_top, margin_left =  get_outpainting_frame_location(final_height, final_width,  outpainting_dims, 1)
+        height, width, margin_top, margin_left =  get_outpainting_frame_location(final_height, final_width,  outpainting_dims, 1)        
 
     if any_mask:
         num_frames = min(len(video), len(mask_video))
@@ -3895,7 +3895,7 @@ def preprocess_video_with_mask(input_video_path, input_mask_path, height, width,
         if fit_crop:
             frame = rescale_and_crop(frame, width, height)
         else:
-            frame = frame.resize((width, height), resample=Image.Resampling.LANCZOS)
+            frame = frame.resize((width, height), resample=Image.Resampling.LANCZOS) 
         frame = np.array(frame) 
         if any_mask:
             if any_identity_mask:
@@ -3905,7 +3905,7 @@ def preprocess_video_with_mask(input_video_path, input_mask_path, height, width,
                 if fit_crop:
                     mask = rescale_and_crop(mask, width, height)
                 else:
-                    mask = mask.resize((width, height), resample=Image.Resampling.LANCZOS)
+                    mask = mask.resize((width, height), resample=Image.Resampling.LANCZOS) 
                 mask = np.array(mask)
 
             if len(mask.shape) == 3 and mask.shape[2] == 3:
@@ -3918,7 +3918,7 @@ def preprocess_video_with_mask(input_video_path, input_mask_path, height, width,
                 mask = op_expand(mask, kernel, iterations=3)
 
             _, mask = cv2.threshold(mask, 127.5, 255, cv2.THRESH_BINARY)
-            if to_bbox and np.sum(mask == 255) > 0 : #or True
+            if to_bbox and np.sum(mask == 255) > 0 : #or True 
                 x0, y0, x1, y1 = mask_to_xyxy_box(mask)
                 mask = mask * 0
                 mask[y0:y1, x0:x1] = 255
@@ -4035,7 +4035,7 @@ def preprocess_video(height, width, video_in, max_frames, start_frame=0, fit_can
         if fit_crop:
             frame  = rescale_and_crop(frame, new_width, new_height)
         else:
-            frame = frame.resize((new_width,new_height), resample=Image.Resampling.LANCZOS)
+            frame = frame.resize((new_width,new_height), resample=Image.Resampling.LANCZOS) 
         processed_frames_list.append(frame)
 
     np_frames = [np.array(frame) for frame in processed_frames_list]
@@ -4517,7 +4517,7 @@ def enhance_prompt(state, prompt, prompt_enhancer, multi_images_gen_type, overri
     return prompt, prompt
 
 def get_outpainting_dims(video_guide_outpainting):
-    return None if video_guide_outpainting== None or len(video_guide_outpainting) == 0 or video_guide_outpainting == "0 0 0 0" or video_guide_outpainting.startswith("#") else [int(v) for v in video_guide_outpainting.split(" ")]
+    return None if video_guide_outpainting== None or len(video_guide_outpainting) == 0 or video_guide_outpainting == "0 0 0 0" or video_guide_outpainting.startswith("#") else [int(v) for v in video_guide_outpainting.split(" ")] 
 
 def generate_video(
     task,
@@ -4654,7 +4654,7 @@ def generate_video(
         image_mask = None
 
     if model_def.get("no_background_removal", False): remove_background_images_ref = 0
-
+    
     base_model_type = get_base_model_type(model_type)
     model_family = get_model_family(base_model_type)
     model_handler = get_model_handler(base_model_type)
@@ -4742,7 +4742,7 @@ def generate_video(
     # VAE Tiling
     device_mem_capacity = torch.cuda.get_device_properties(None).total_memory / 1048576
     guide_inpaint_color = model_def.get("guide_inpaint_color", 127.5)
-    extract_guide_from_window_start = model_def.get("extract_guide_from_window_start", False)
+    extract_guide_from_window_start = model_def.get("extract_guide_from_window_start", False) 
     hunyuan_custom = "hunyuan_video_custom" in model_filename
     hunyuan_custom_audio =  hunyuan_custom and "audio" in model_filename
     hunyuan_custom_edit =  hunyuan_custom and "edit" in model_filename
@@ -4785,7 +4785,7 @@ def generate_video(
         sliding_window_size = current_video_length
         reuse_frames = 0
 
-    _, _, latent_size = get_model_min_frames_and_step(model_type)
+    _, _, latent_size = get_model_min_frames_and_step(model_type)  
     original_image_refs = image_refs
     image_refs = None if image_refs is None else ([] + image_refs) # work on a copy as it is going to be modified
     # image_refs = None
@@ -4795,7 +4795,7 @@ def generate_video(
     # Image Ref (non background and non positioned frames) are boxed in a white canvas in order to keep their own width/height ratio
     frames_to_inject = []
     any_background_ref  = 0
-    if "K" in video_prompt_type:
+    if "K" in video_prompt_type: 
         any_background_ref = 2 if model_def.get("all_image_refs_are_background_ref", False) else 1
 
     outpainting_dims = get_outpainting_dims(video_guide_outpainting)
@@ -4859,7 +4859,7 @@ def generate_video(
                     audio_guide, audio_guide2  = "speaker1.wav", "speaker2.wav"
                 else:
                     audio_guide, audio_guide2  = get_available_filename(save_path, audio_guide, "_tmp1", ".wav"),  get_available_filename(save_path, audio_guide, "_tmp2", ".wav")
-                    temp_filenames_list +=   [audio_guide, audio_guide2]
+                    temp_filenames_list +=   [audio_guide, audio_guide2]                  
                 if clean_audio_files:
                     clean_audio_guide = get_vocals(original_audio_guide, get_available_filename(save_path, original_audio_guide, "_clean", ".wav"))
                     temp_filenames_list += [clean_audio_guide]
@@ -4883,7 +4883,7 @@ def generate_video(
             audio_proj_full, output_new_audio_data = get_full_audio_embeddings(audio_guide1 = audio_guide, audio_guide2= audio_guide2, combination_type= combination_type , num_frames= max_source_video_frames, sr= audio_sampling_rate, fps =fps, padded_frames_for_embeddings = (reuse_frames if reset_control_aligment else 0), min_audio_duration = min_audio_duration) 
             if output_new_audio_data is not None: # not none if modified
                 if clean_audio_files: # need to rebuild the sum of audios with original audio
-                    _, output_new_audio_data = get_full_audio_embeddings(audio_guide1 = original_audio_guide, audio_guide2= original_audio_guide2, combination_type= combination_type , num_frames= max_source_video_frames, sr= audio_sampling_rate, fps =fps, padded_frames_for_embeddings = (reuse_frames if reset_control_aligment else 0), min_audio_duration = min_audio_duration, return_sum_only= True)
+                    _, output_new_audio_data = get_full_audio_embeddings(audio_guide1 = original_audio_guide, audio_guide2= original_audio_guide2, combination_type= combination_type , num_frames= max_source_video_frames, sr= audio_sampling_rate, fps =fps, padded_frames_for_embeddings = (reuse_frames if reset_control_aligment else 0), min_audio_duration = min_audio_duration, return_sum_only= True) 
                 output_new_audio_filepath=  None # need to build original speaker track if it changed size (due to padding at the end) or if it has been combined
 
     if hunyuan_custom_edit and video_guide != None:
@@ -4990,31 +4990,31 @@ def generate_video(
             if window_no == 1 and (video_source is not None or image_start is not None):
                 if image_start is not None:
                     image_start_tensor, new_height, new_width = calculate_dimensions_and_resize_image(image_start, height, width, sample_fit_canvas, fit_crop, block_size = block_size)
-                    if fit_crop: refresh_preview["image_start"] = image_start_tensor
+                    if fit_crop: refresh_preview["image_start"] = image_start_tensor 
                     image_start_tensor = convert_image_to_tensor(image_start_tensor)
                     pre_video_guide =  prefix_video = image_start_tensor.unsqueeze(1)
                 else:
                     prefix_video  = preprocess_video(width=width, height=height,video_in=video_source, max_frames= parsed_keep_frames_video_source , start_frame = 0, fit_canvas= sample_fit_canvas, fit_crop = fit_crop, target_fps = fps, block_size = block_size )
                     prefix_video  = prefix_video.permute(3, 0, 1, 2)
                     prefix_video  = prefix_video.float().div_(127.5).sub_(1.) # c, f, h, w
-                    if fit_crop or "L" in image_prompt_type: refresh_preview["video_source"] = convert_tensor_to_image(prefix_video, 0)
+                    if fit_crop or "L" in image_prompt_type: refresh_preview["video_source"] = convert_tensor_to_image(prefix_video, 0) 
 
-                    new_height, new_width = prefix_video.shape[-2:]
+                    new_height, new_width = prefix_video.shape[-2:]                    
                     pre_video_guide =  prefix_video[:, -reuse_frames:]
                 pre_video_frame = convert_tensor_to_image(prefix_video[:, -1])
                 source_video_overlap_frames_count = pre_video_guide.shape[1]
                 source_video_frames_count = prefix_video.shape[1]
-                if sample_fit_canvas != None:
+                if sample_fit_canvas != None: 
                     image_size  = pre_video_guide.shape[-2:]
                     sample_fit_canvas = None
                 guide_start_frame =  prefix_video.shape[1]
             if image_end is not None:
                 image_end_list=  image_end if isinstance(image_end, list) else [image_end]
                 if len(image_end_list) >= window_no:
-                    new_height, new_width = image_size
+                    new_height, new_width = image_size                    
                     image_end_tensor, _, _ = calculate_dimensions_and_resize_image(image_end_list[window_no-1], new_height, new_width, sample_fit_canvas, fit_crop, block_size = block_size)
-                    # image_end_tensor =image_end_list[window_no-1].resize((new_width, new_height), resample=Image.Resampling.LANCZOS)
-                    refresh_preview["image_end"] = image_end_tensor
+                    # image_end_tensor =image_end_list[window_no-1].resize((new_width, new_height), resample=Image.Resampling.LANCZOS) 
+                    refresh_preview["image_end"] = image_end_tensor 
                     image_end_tensor = convert_image_to_tensor(image_end_tensor)
                 image_end_list= None
             window_start_frame = guide_start_frame - (reuse_frames if window_no > 1 else source_video_overlap_frames_count)
@@ -5041,7 +5041,7 @@ def generate_video(
                     for pos in positions :
                         if len(pos) > 0:
                             if pos in ["L", "l"]:
-                                cur_end_pos += sliding_window_size if project_window_no > 1 else current_video_length
+                                cur_end_pos += sliding_window_size if project_window_no > 1 else current_video_length 
                                 if cur_end_pos >= last_frame_no-1 and not joker_used:
                                     joker_used = True
                                     cur_end_pos = last_frame_no -1
@@ -5051,11 +5051,11 @@ def generate_video(
                             else:
                                 frames_positions_list.append(int(pos)-1 + alignment_shift)
                     frames_positions_list = frames_positions_list[:len(image_refs)]
-                nb_frames_positions = len(frames_positions_list)
+                nb_frames_positions = len(frames_positions_list) 
                 if nb_frames_positions > 0:
                     frames_to_inject = [None] * (max(frames_positions_list) + 1)
                     for i, pos in enumerate(frames_positions_list):
-                        frames_to_inject[pos] = image_refs[i]
+                        frames_to_inject[pos] = image_refs[i] 
 
 
             video_guide_processed = video_mask_processed = video_guide_processed2 = video_mask_processed2 = sparse_video_image = None
@@ -5066,9 +5066,9 @@ def generate_video(
                 guide_frames_extract_start = aligned_window_start_frame if extract_guide_from_window_start else aligned_guide_start_frame
                 extra_control_frames = model_def.get("extra_control_frames", 0)
                 if extra_control_frames > 0 and aligned_guide_start_frame >= extra_control_frames: guide_frames_extract_start -= extra_control_frames
-
+                        
                 keep_frames_parsed = [True] * -guide_frames_extract_start if guide_frames_extract_start  <0 else []
-                keep_frames_parsed += keep_frames_parsed_full[max(0, guide_frames_extract_start): aligned_guide_end_frame ]
+                keep_frames_parsed += keep_frames_parsed_full[max(0, guide_frames_extract_start): aligned_guide_end_frame ] 
                 guide_frames_extract_count = len(keep_frames_parsed)
 
                 # Extract Faces to video
@@ -5083,7 +5083,7 @@ def generate_video(
 
                 # Generic Video Preprocessing
                 process_outside_mask = process_map_outside_mask.get(filter_letters(video_prompt_type, "YWX"), None)
-                preprocess_type, preprocess_type2 =  "raw", None
+                preprocess_type, preprocess_type2 =  "raw", None 
                 for process_num, process_letter in enumerate( filter_letters(video_prompt_type, video_guide_processes)):
                     if process_num == 0:
                         preprocess_type = process_map_video_guide.get(process_letter, "raw")
@@ -5121,7 +5121,7 @@ def generate_video(
                         elif any_background_ref == 1:
                             end_ref_position = nb_frames_positions + 1
                         else:
-                            end_ref_position = nb_frames_positions
+                            end_ref_position = nb_frames_positions 
                         for i, img in enumerate(image_refs[:end_ref_position]):
                             image_refs[i] = rescale_and_crop(img, default_image_size[1], default_image_size[0])
                         refresh_preview["image_refs"] = image_refs
@@ -5143,7 +5143,7 @@ def generate_video(
                             send_cmd("progress", [0, get_latest_status(state, "Removing Images References Background")])
 
                         src_ref_images, src_ref_masks  = resize_and_remove_background(src_ref_images , image_size[1], image_size[0],
-                                                                                        remove_background_images_ref > 0, any_background_ref,
+                                                                                        remove_background_images_ref > 0, any_background_ref, 
                                                                                         fit_into_canvas= model_def.get("fit_into_canvas_image_refs", 1),
                                                                                         block_size=block_size,
                                                                                         outpainting_dims =outpainting_dims,
@@ -5151,25 +5151,25 @@ def generate_video(
                                                                                         return_tensor= model_def.get("return_image_refs_tensor", False) )
 
             frames_to_inject_parsed = frames_to_inject[ window_start_frame if extract_guide_from_window_start else guide_start_frame: guide_end_frame]
-            if video_guide is not None or len(frames_to_inject_parsed) > 0 or model_def.get("forced_guide_mask_inputs", False):
+            if video_guide is not None or len(frames_to_inject_parsed) > 0 or model_def.get("forced_guide_mask_inputs", False): 
                 any_mask = video_mask is not None or model_def.get("forced_guide_mask_inputs", False)
                 any_guide_padding = model_def.get("pad_guide_video", False)
                 from shared.utils.utils import prepare_video_guide_and_mask
-                src_videos, src_masks = prepare_video_guide_and_mask(   [video_guide_processed] + ([] if video_guide_processed2 is None else [video_guide_processed2]),
+                src_videos, src_masks = prepare_video_guide_and_mask(   [video_guide_processed] + ([] if video_guide_processed2 is None else [video_guide_processed2]), 
                                                                         [video_mask_processed] + ([] if video_guide_processed2 is None else [video_mask_processed2]),
-                                                                        None if extract_guide_from_window_start or model_def.get("dont_cat_preguide", False) or sparse_video_image is not None else pre_video_guide,
+                                                                        None if extract_guide_from_window_start or model_def.get("dont_cat_preguide", False) or sparse_video_image is not None else pre_video_guide, 
                                                                         image_size, current_video_length, latent_size,
-                                                                        any_mask, any_guide_padding, guide_inpaint_color,
+                                                                        any_mask, any_guide_padding, guide_inpaint_color, 
                                                                         keep_frames_parsed, frames_to_inject_parsed , outpainting_dims)
                 video_guide_processed = video_guide_processed2 = video_mask_processed = video_mask_processed2 = None
                 if len(src_videos) == 1:
-                    src_video, src_video2, src_mask, src_mask2 = src_videos[0], None, src_masks[0], None
+                    src_video, src_video2, src_mask, src_mask2 = src_videos[0], None, src_masks[0], None 
                 else:
-                    src_video, src_video2 = src_videos
-                    src_mask, src_mask2 = src_masks
+                    src_video, src_video2 = src_videos 
+                    src_mask, src_mask2 = src_masks 
                 src_videos = src_masks = None
                 if src_video is None:
-                    abort = True
+                    abort = True 
                     break
                 if src_faces is not None:
                     if src_faces.shape[1] < src_video.shape[1]:
@@ -5178,18 +5178,18 @@ def generate_video(
                         src_faces = src_faces[:, :src_video.shape[1]]
                 if video_guide is not None or len(frames_to_inject_parsed) > 0:
                     if args.save_masks:
-                        if src_video is not None:
+                        if src_video is not None: 
                             save_video( src_video, "masked_frames.mp4", fps)
                             if any_mask: save_video( src_mask, "masks.mp4", fps, value_range=(0, 1))
-                        if src_video2 is not None:
+                        if src_video2 is not None: 
                             save_video( src_video2, "masked_frames2.mp4", fps)
                             if any_mask: save_video( src_mask2, "masks2.mp4", fps, value_range=(0, 1))
-                if video_guide is not None:
-                    preview_frame_no = 0 if extract_guide_from_window_start or model_def.get("dont_cat_preguide", False) or sparse_video_image is not None else (guide_start_frame - window_start_frame)
+                if video_guide is not None:                        
+                    preview_frame_no = 0 if extract_guide_from_window_start or model_def.get("dont_cat_preguide", False) or sparse_video_image is not None else (guide_start_frame - window_start_frame) 
                     refresh_preview["video_guide"] = convert_tensor_to_image(src_video, preview_frame_no)
                     if src_video2 is not None:
-                        refresh_preview["video_guide"] = [refresh_preview["video_guide"], convert_tensor_to_image(src_video2, preview_frame_no)]
-                    if src_mask is not None and video_mask is not None:
+                        refresh_preview["video_guide"] = [refresh_preview["video_guide"], convert_tensor_to_image(src_video2, preview_frame_no)] 
+                    if src_mask is not None and video_mask is not None:                        
                         refresh_preview["video_mask"] = convert_tensor_to_image(src_mask, preview_frame_no, mask_levels = True)
 
             if src_ref_images is not None or nb_frames_positions:
@@ -5379,7 +5379,7 @@ def generate_video(
                 send_cmd("output")  
             else:
                 sample = samples.cpu()
-                abort = not is_image and sample.shape[1] < current_video_length
+                abort = not is_image and sample.shape[1] < current_video_length    
                 # if True: # for testing
                 #     torch.save(sample, "output.pt")
                 # else:
@@ -6256,7 +6256,7 @@ def prepare_inputs_dict(target, inputs, model_type = None, model_filename = None
 
     image_outputs = inputs.get("image_mode",0) > 0
 
-    pop=[]
+    pop=[]    
     if "force_fps" in inputs and len(inputs["force_fps"])== 0:
         pop += ["force_fps"]
 
@@ -6280,7 +6280,7 @@ def prepare_inputs_dict(target, inputs, model_type = None, model_filename = None
         pop += ["model_mode"]
 
     if not vace and not phantom and not hunyuan_video_custom:
-        unsaved_params = ["keep_frames_video_guide", "mask_expand"] #"video_prompt_type",
+        unsaved_params = ["keep_frames_video_guide", "mask_expand"] #"video_prompt_type",  
         if base_model_type in ["t2v"]: unsaved_params = unsaved_params[1:]
         pop += unsaved_params
 
@@ -6290,13 +6290,13 @@ def prepare_inputs_dict(target, inputs, model_type = None, model_filename = None
             pop += ["image_refs_relative_size"]
 
     if not vace:
-        pop += ["frames_positions", "control_net_weight", "control_net_weight2"]
+        pop += ["frames_positions", "control_net_weight", "control_net_weight2"] 
 
     if not len(model_def.get("control_net_weight_alt_name", "")) >0:
         pop += ["control_net_alt"]
-
+                        
     if model_def.get("video_guide_outpainting", None) is None:
-        pop += ["video_guide_outpainting"]
+        pop += ["video_guide_outpainting"] 
 
     if not (vace or t2v):
         pop += ["min_frames_if_references"]
@@ -6387,7 +6387,7 @@ def image_to_ref_image_add(state, input_file_list, choice, target, target_name):
     file_list, file_settings_list = get_file_list(state, input_file_list)
     if len(file_list) == 0 or choice == None or choice < 0 or choice > len(file_list): return gr.update()
     model_type = state["model_type"]
-    model_def = get_model_def(model_type)
+    model_def = get_model_def(model_type)    
     if model_def.get("one_image_ref_needed", False):
         gr.Info(f"Selected Image was set to {target_name}")
         target =[file_list[choice]]
@@ -6613,7 +6613,7 @@ def get_settings_from_file(state, file_path, allow_json, merge_with_defaults, sw
     except:
         configs = None
     if configs is None: return None, False
-
+        
 
     current_model_filename = state["model_filename"]
     current_model_type = state["model_type"]
@@ -6650,18 +6650,18 @@ def switch_image_mode(state):
     ui_defaults = get_model_settings(state, model_type)        
 
     ui_defaults["image_mode"] = image_mode
-    video_prompt_type = ui_defaults.get("video_prompt_type", "")
+    video_prompt_type = ui_defaults.get("video_prompt_type", "") 
     model_def = get_model_def( model_type)
     inpaint_support = model_def.get("inpaint_support", False)
     if inpaint_support:
         if image_mode == 1:
-            video_prompt_type = del_in_sequence(video_prompt_type, "VAG" + all_guide_processes)
+            video_prompt_type = del_in_sequence(video_prompt_type, "VAG" + all_guide_processes)  
             video_prompt_type = add_to_sequence(video_prompt_type, "KI")
         elif image_mode == 2:
             video_prompt_type = del_in_sequence(video_prompt_type, "KI" + all_guide_processes)
-            video_prompt_type = add_to_sequence(video_prompt_type, "VAG")
-        ui_defaults["video_prompt_type"] = video_prompt_type
-
+            video_prompt_type = add_to_sequence(video_prompt_type, "VAG")  
+        ui_defaults["video_prompt_type"] = video_prompt_type 
+        
     return  str(time.time())
 
 def load_settings_from_file(state, file_path):
@@ -6786,10 +6786,10 @@ def save_inputs(
     model_type = state["model_type"]
     if image_mask_guide is not None and image_mode >= 1 and video_prompt_type is not None and "A" in video_prompt_type and not "U" in video_prompt_type:
     # if image_mask_guide is not None and image_mode == 2:
-        if "background" in image_mask_guide:
+        if "background" in image_mask_guide: 
             image_guide = image_mask_guide["background"]
-        if "layers" in image_mask_guide and len(image_mask_guide["layers"])>0:
-            image_mask = image_mask_guide["layers"][0]
+        if "layers" in image_mask_guide and len(image_mask_guide["layers"])>0: 
+            image_mask = image_mask_guide["layers"][0] 
         image_mask_guide = None
     inputs = get_function_arguments(save_inputs, locals())
     inputs.pop("target")
@@ -6903,11 +6903,11 @@ def get_current_model_settings(state):
     if ui_defaults == None:
         ui_defaults = get_default_settings(model_type)
         set_model_settings(state, model_type, ui_defaults)
-    return ui_defaults
+    return ui_defaults 
 
 def fill_inputs(state):
     ui_defaults = get_current_model_settings(state)
-
+ 
     return generate_video_tab(update_form = True, state_dict = state, ui_defaults = ui_defaults)
 
 def preload_model_when_switching(state):
@@ -6951,7 +6951,7 @@ def filter_letters(source_str, letters, default= ""):
             ret += letter
     if len(ret) == 0:
         return default
-    return ret
+    return ret    
 
 def add_to_sequence(source_str, letters):
     ret = source_str
@@ -7010,7 +7010,7 @@ def refresh_video_prompt_type_image_refs(state, video_prompt_type, video_prompt_
     video_prompt_type = add_to_sequence(video_prompt_type, video_prompt_type_image_refs)
     visible = "I" in video_prompt_type
     any_outpainting= image_mode in model_def.get("video_guide_outpainting", [])
-    rm_bg_visible= visible and not model_def.get("no_background_removal", False)
+    rm_bg_visible= visible and not model_def.get("no_background_removal", False) 
     img_rel_size_visible = visible and model_def.get("any_image_refs_relative_size", False)
     return video_prompt_type, gr.update(visible = visible),gr.update(visible = rm_bg_visible), gr.update(visible = img_rel_size_visible), gr.update(visible = visible and "F" in video_prompt_type_image_refs), gr.update(visible= ("F" in video_prompt_type_image_refs or "K" in video_prompt_type_image_refs or "V" in video_prompt_type) and any_outpainting )
 
@@ -7026,14 +7026,14 @@ def switch_image_guide_editor(image_mode, old_video_prompt_type , video_prompt_t
                 image_mask_guide_value["value"] = old_image_guide_value
             else:
                 image_mask_guide_value["value"] = {"background" : old_image_guide_value, "composite" : None, "layers": [rgb_bw_to_rgba_mask(old_image_mask_value)]}
-            image_guide_value["value"] = image_mask_value["value"] = None
+            image_guide_value["value"] = image_mask_value["value"] = None 
         else:
             if old_image_mask_guide_value is not None and "background" in old_image_mask_guide_value:
                 image_guide_value["value"] = old_image_mask_guide_value["background"]
                 if "layers" in old_image_mask_guide_value:
                     image_mask_value["value"] = old_image_mask_guide_value["layers"][0] if len(old_image_mask_guide_value["layers"]) >=1 else None
             image_mask_guide_value["value"] = {"background" : None, "composite" : None, "layers": []}
-
+            
     image_mask_guide = gr.update(visible= visible and mask_in_new, **image_mask_guide_value)
     image_guide = gr.update(visible = visible and not mask_in_new, **image_guide_value)
     image_mask = gr.update(visible = False, **image_mask_value)
@@ -7082,15 +7082,15 @@ def refresh_video_prompt_type_video_guide(state, filter_type, video_prompt_type,
     else:
         mask_selector_visible = True
     ref_images_visible = "I" in video_prompt_type
-    custom_options = custom_checkbox = False
+    custom_options = custom_checkbox = False 
     custom_video_selection = model_def.get("custom_video_selection", None)
     if custom_video_selection is not None:
         custom_trigger =  custom_video_selection.get("trigger","")
         if len(custom_trigger) == 0 or custom_trigger in video_prompt_type:
             custom_options = True
             custom_checkbox = custom_video_selection.get("type","") == "checkbox"
-
-    return video_prompt_type,  gr.update(visible = visible and not image_outputs), image_guide, gr.update(visible = keep_frames_video_guide_visible), gr.update(visible = visible and "G" in video_prompt_type), gr.update(visible= (visible or "F" in video_prompt_type or "K" in video_prompt_type) and any_outpainting), gr.update(visible= visible and mask_selector_visible and  not "U" in video_prompt_type ) ,  gr.update(visible= mask_visible and not image_outputs), image_mask, image_mask_guide, gr.update(visible= mask_visible),  gr.update(visible = ref_images_visible ), gr.update(visible= custom_options and not custom_checkbox ), gr.update(visible= custom_options and custom_checkbox )
+            
+    return video_prompt_type,  gr.update(visible = visible and not image_outputs), image_guide, gr.update(visible = keep_frames_video_guide_visible), gr.update(visible = visible and "G" in video_prompt_type), gr.update(visible= (visible or "F" in video_prompt_type or "K" in video_prompt_type) and any_outpainting), gr.update(visible= visible and mask_selector_visible and  not "U" in video_prompt_type ) ,  gr.update(visible= mask_visible and not image_outputs), image_mask, image_mask_guide, gr.update(visible= mask_visible),  gr.update(visible = ref_images_visible ), gr.update(visible= custom_options and not custom_checkbox ), gr.update(visible= custom_options and custom_checkbox ) 
 
 def refresh_video_prompt_type_video_custom_dropbox(state, video_prompt_type, video_prompt_type_video_custom_dropbox):
     model_type = state["model_type"]
@@ -7125,7 +7125,7 @@ def refresh_video_prompt_type_video_custom_checkbox(state, video_prompt_type, vi
 #     control_video_visible = "V" in video_prompt_type
 #     ref_images_visible = "I" in video_prompt_type
 #     denoising_strength_visible = "G" in video_prompt_type
-#     mask_expand_visible =  control_video_visible and "A" in video_prompt_type and not "U" in video_prompt_type
+#     mask_expand_visible =  control_video_visible and "A" in video_prompt_type and not "U" in video_prompt_type 
 #     mask_video_input_visible =  image_mode == 0 and mask_expand_visible
 #     image_mask_guide, image_guide, image_mask = switch_image_guide_editor(image_mode, old_video_prompt_type , video_prompt_type, old_image_mask_guide_value, old_image_guide_value, old_image_mask_value )
 #     keep_frames_video_guide_visible = not image_outputs and visible and not model_def.get("keep_frames_video_guide_not_supported", False)
@@ -7153,7 +7153,7 @@ def get_prompt_labels(multi_prompts_gen_type, image_outputs = False):
     return "Prompts (" + new_line_text + ", # lines = comments, ! lines = macros)", "Prompts (" + new_line_text + ", # lines = comments)"
 
 def get_image_end_label(multi_prompts_gen_type):
-    return "Images as ending points for new Videos in the Generation Queue" if multi_prompts_gen_type == 0 else "Images as ending points for each new Window of the same Video Generation"
+    return "Images as ending points for new Videos in the Generation Queue" if multi_prompts_gen_type == 0 else "Images as ending points for each new Window of the same Video Generation" 
 
 def refresh_prompt_labels(multi_prompts_gen_type, image_mode):
     prompt_label, wizard_prompt_label =  get_prompt_labels(multi_prompts_gen_type, image_mode > 0)
@@ -7303,7 +7303,7 @@ def group_resolutions(model_def, resolutions, selected_resolution):
             if group not in grouped_resolutions:
                 grouped_resolutions[group] = []
             grouped_resolutions[group].append(resolution)
-
+        
         available_groups = [group for group in group_thresholds if group in grouped_resolutions]
     
         selected_group = categorize_resolution(selected_resolution)
@@ -7315,12 +7315,12 @@ def change_resolution_group(state, selected_group):
     model_type = state["model_type"]
     model_def = get_model_def(model_type)
     model_resolutions = model_def.get("resolutions", None)
-    resolution_choices, _ = get_resolution_choices(None, model_resolutions)
+    resolution_choices, _ = get_resolution_choices(None, model_resolutions)   
     if model_resolutions is None:
         group_resolution_choices = [ resolution for resolution in resolution_choices if categorize_resolution(resolution[1]) == selected_group ]
     else:
         last_resolution = group_resolution_choices[0][1]
-        return gr.update(choices= group_resolution_choices, value= last_resolution)
+        return gr.update(choices= group_resolution_choices, value= last_resolution) 
 
     last_resolution_per_group = state["last_resolution_per_group"]
     last_resolution = last_resolution_per_group.get(selected_group, "")
@@ -7374,7 +7374,7 @@ def compute_video_length_label(fps, current_video_length):
     if fps is None:
         return f"Number of frames"
     else:
-        return f"Number of frames ({fps} frames = 1s), current duration: {(current_video_length / fps):.1f}s",
+        return f"Number of frames ({fps} frames = 1s), current duration: {(current_video_length / fps):.1f}s",  
 
 def refresh_video_length_label(state, current_video_length, force_fps, video_guide, video_source):
     base_model_type = get_base_model_type(state["model_type"])
@@ -7534,10 +7534,10 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
             if not v2i_switch_supported and not image_outputs:
                 image_mode_value = 0
             else:
-                image_outputs = image_mode_value > 0
+                image_outputs = image_mode_value > 0 
             inpaint_support = model_def.get("inpaint_support", False)
             image_mode = gr.Number(value =image_mode_value, visible = False)
-            image_mode_tab_selected= "t2i" if image_mode_value == 1 else ("inpaint" if image_mode_value == 2 else "t2v")
+            image_mode_tab_selected= "t2i" if image_mode_value == 1 else ("inpaint" if image_mode_value == 2 else "t2v") 
             with gr.Tabs(visible = v2i_switch_supported or inpaint_support, selected= image_mode_tab_selected ) as image_mode_tabs:
                 with gr.Tab("Text to Video", id = "t2v", elem_classes="compact_tab", visible = v2i_switch_supported) as tab_t2v:
                     pass
@@ -7550,15 +7550,15 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
             model_mode_choices = model_def.get("model_modes", None)
             model_modes_visibility = [0,1,2]
             if model_mode_choices is not None: model_modes_visibility= model_mode_choices.get("image_modes", model_modes_visibility)
-
-            with gr.Column(visible= image_mode_value == 0 and len(image_prompt_types_allowed)> 0 or model_mode_choices is not None and image_mode_value in model_modes_visibility ) as image_prompt_column:
+            
+            with gr.Column(visible= image_mode_value == 0 and len(image_prompt_types_allowed)> 0 or model_mode_choices is not None and image_mode_value in model_modes_visibility ) as image_prompt_column: 
                 # Video Continue /  Start Frame / End Frame
                 image_prompt_type_value= ui_defaults.get("image_prompt_type","")
                 image_prompt_type = gr.Text(value= image_prompt_type_value, visible= False)
                 image_prompt_type_choices = []
-                if "T" in image_prompt_types_allowed:
+                if "T" in image_prompt_types_allowed: 
                     image_prompt_type_choices += [("Text Prompt Only" if "S" in image_prompt_types_allowed else "New Video", "")]
-                if "S" in image_prompt_types_allowed:
+                if "S" in image_prompt_types_allowed: 
                     image_prompt_type_choices += [("Start Video with Image", "S")]
                     any_start_image = True
                 if "V" in image_prompt_types_allowed:
@@ -7582,13 +7582,13 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                             image_prompt_type_endcheckbox = gr.Checkbox( value =False, show_label= False, visible= False , scale= 1)
                 image_start_row, image_start, image_start_extra = get_image_gallery(label= "Images as starting points for new Videos in the Generation Queue", value = ui_defaults.get("image_start", None), visible= "S" in image_prompt_type_value )
                 video_source = gr.Video(label= "Video to Continue", height = gallery_height, visible= "V" in image_prompt_type_value, value= ui_defaults.get("video_source", None),)
-                image_end_row, image_end, image_end_extra = get_image_gallery(label= get_image_end_label(ui_defaults.get("multi_prompts_gen_type", 0)), value = ui_defaults.get("image_end", None), visible= any_letters(image_prompt_type_value, "SVL") and ("E" in image_prompt_type_value)     )
+                image_end_row, image_end, image_end_extra = get_image_gallery(label= get_image_end_label(ui_defaults.get("multi_prompts_gen_type", 0)), value = ui_defaults.get("image_end", None), visible= any_letters(image_prompt_type_value, "SVL") and ("E" in image_prompt_type_value)     ) 
                 if model_mode_choices is None or image_mode_value not in model_modes_visibility:
                     model_mode = gr.Dropdown(value=None, visible=False)
                 else:
                     model_mode_value = get_default_value(model_mode_choices["choices"], ui_defaults.get("model_mode", None), model_mode_choices["default"] )
-                    model_mode = gr.Dropdown(choices=model_mode_choices["choices"], value=model_mode_value, label=model_mode_choices["label"],  visible=True)
-                keep_frames_video_source = gr.Text(value=ui_defaults.get("keep_frames_video_source","") , visible= len(filter_letters(image_prompt_type_value, "VL"))>0 , scale = 2, label= "Truncate Video beyond this number of resampled Frames (empty=Keep All, negative truncates from End)" )
+                    model_mode = gr.Dropdown(choices=model_mode_choices["choices"], value=model_mode_value, label=model_mode_choices["label"],  visible=True)                        
+                keep_frames_video_source = gr.Text(value=ui_defaults.get("keep_frames_video_source","") , visible= len(filter_letters(image_prompt_type_value, "VL"))>0 , scale = 2, label= "Truncate Video beyond this number of resampled Frames (empty=Keep All, negative truncates from End)" ) 
 
             any_control_video = any_control_image = False
             if image_mode_value ==2:
@@ -7600,7 +7600,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
             guide_custom_choices = model_def.get("guide_custom_choices", None)
             image_ref_choices = model_def.get("image_ref_choices", None)
 
-            with gr.Column(visible= guide_preprocessing is not None or mask_preprocessing is not None or guide_custom_choices is not None or image_ref_choices is not None) as video_prompt_column:
+            with gr.Column(visible= guide_preprocessing is not None or mask_preprocessing is not None or guide_custom_choices is not None or image_ref_choices is not None) as video_prompt_column: 
                 video_prompt_type_value= ui_defaults.get("video_prompt_type","")
                 video_prompt_type = gr.Text(value= video_prompt_type_value, visible= False)
                 with gr.Row(visible = image_mode_value!=2) as guide_selection_row:
@@ -7628,7 +7628,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                             "SLV": "Transfer Shapes & Flow",
                         }
                         guide_preprocessing_choices = []
-                        guide_preprocessing_labels = guide_preprocessing.get("labels", {})
+                        guide_preprocessing_labels = guide_preprocessing.get("labels", {}) 
                         for process_type in guide_preprocessing["selection"]:
                             process_label = guide_preprocessing_labels.get(process_type, None)
                             process_label = guide_preprocessing_labels_all.get(process_type,process_type) if process_label is None else process_label
@@ -7643,7 +7643,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                             label= video_prompt_type_video_guide_label , scale = 1, visible= guide_preprocessing.get("visible", True) , show_label= True,
                         )
                         any_control_video = True
-                        any_control_image = image_outputs
+                        any_control_image = image_outputs 
 
                     # Alternate Control Video Preprocessing / Options
                     if guide_custom_choices is None:
@@ -7661,11 +7661,11 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                             label= video_prompt_type_video_guide_alt_label, show_label= guide_custom_choices.get("show_label", True), scale = guide_custom_choices.get("scale", 1),
                         )
                         any_control_video = True
-                        any_control_image = image_outputs
+                        any_control_image = image_outputs 
 
                     # Custom dropdown box & checkbox
                     custom_video_selection = model_def.get("custom_video_selection", None)
-                    custom_checkbox= False
+                    custom_checkbox= False 
                     if custom_video_selection is None:
                         video_prompt_type_video_custom_dropbox = gr.Dropdown(choices=[("","")], value="", label="Custom Dropdown", scale = 1, visible= False, show_label= True, )
                         video_prompt_type_video_custom_checkbox = gr.Checkbox(value=False, label="Custom Checkbbox", scale = 1, visible= False, show_label= True, )
@@ -7673,7 +7673,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                     else:
                         custom_video_choices = custom_video_selection["choices"]
                         custom_video_trigger = custom_video_selection.get("trigger", "")
-                        custom_choices =  len(custom_video_trigger) == 0 or custom_video_trigger in video_prompt_type_value
+                        custom_choices =  len(custom_video_trigger) == 0 or custom_video_trigger in video_prompt_type_value 
                         custom_checkbox = custom_video_selection.get("type","") == "checkbox"
 
                         video_prompt_type_video_custom_label = custom_video_selection.get("label", "Custom Choices")
@@ -7681,7 +7681,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                             custom_video_choices,
                             value=filter_letters(video_prompt_type_value, custom_video_selection.get("letters_filter", ""), custom_video_selection.get("default", "")),
                             scale = custom_video_selection.get("scale", 1),
-                            label= video_prompt_type_video_custom_label , visible= not custom_checkbox and custom_choices,
+                            label= video_prompt_type_video_custom_label , visible= not custom_checkbox and custom_choices, 
                             show_label= custom_video_selection.get("show_label", True),
                         )
                         video_prompt_type_video_custom_checkbox = gr.Checkbox(value= custom_video_choices[1][1] in video_prompt_type_value , label=custom_video_choices[1][0] , scale = custom_video_selection.get("scale", 1), visible=custom_checkbox and custom_choices, show_label= True, elem_classes="cbx_centered" )
@@ -7696,7 +7696,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                             "A": "Masked Area",
                             "NA": "Non Masked Area",
                             "XA": "Masked Area, rest Inpainted",
-                            "XNA": "Non Masked Area, rest Inpainted",
+                            "XNA": "Non Masked Area, rest Inpainted", 
                             "YA": "Masked Area, rest Depth",
                             "YNA": "Non Masked Area, rest Depth",
                             "WA": "Masked Area, rest Shapes",
@@ -7706,7 +7706,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                         }
 
                         mask_preprocessing_choices = []
-                        mask_preprocessing_labels = mask_preprocessing.get("labels", {})
+                        mask_preprocessing_labels = mask_preprocessing.get("labels", {}) 
                         for process_type in mask_preprocessing["selection"]:
                             process_label = mask_preprocessing_labels.get(process_type, None)
                             process_label = mask_preprocessing_labels_all.get(process_type, process_type) if process_label is None else process_label
@@ -7716,7 +7716,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                         video_prompt_type_video_mask = gr.Dropdown(
                             mask_preprocessing_choices,
                             value=filter_letters(video_prompt_type_value, "XYZWNA", mask_preprocessing.get("default", "")),
-                            label= video_prompt_type_video_mask_label , scale = 1, visible= "V" in video_prompt_type_value and not "U" in video_prompt_type_value and mask_preprocessing.get("visible", True),
+                            label= video_prompt_type_video_mask_label , scale = 1, visible= "V" in video_prompt_type_value and not "U" in video_prompt_type_value and mask_preprocessing.get("visible", True), 
                             show_label= True,
                         )
 
@@ -7742,7 +7742,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
 
                 image_guide = gr.Image(label= "Control Image", height = 800, type ="pil", visible= image_mode_value==1 and "V" in video_prompt_type_value and ("U" in video_prompt_type_value or not "A" in video_prompt_type_value ) , value= ui_defaults.get("image_guide", None))
                 video_guide = gr.Video(label= "Control Video", height = gallery_height, visible= (not image_outputs) and "V" in video_prompt_type_value, value= ui_defaults.get("video_guide", None))
-                if image_mode_value >= 1:
+                if image_mode_value >= 1:  
                     image_guide_value = ui_defaults.get("image_guide", None)
                     image_mask_value = ui_defaults.get("image_mask", None)
                     if image_guide_value is None:
@@ -7753,17 +7753,17 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
 
                     image_mask_guide = gr.ImageEditor(
                         label="Control Image to be Inpainted" if image_mode_value == 2 else "Control Image and Mask",
-                        value = image_mask_guide_value,
+                        value = image_mask_guide_value, 
                         type='pil',
                         sources=["upload", "webcam"],
                         image_mode='RGB',
                         layers=False,
                         brush=gr.Brush(colors=["#FFFFFF"], color_mode="fixed"),
                         # fixed_canvas= True,
-                        # width=800,
+                        # width=800,  
                         height=800,
                         # transforms=None,
-                        # interactive=True,
+                        # interactive=True, 
                         elem_id="img_editor",
                         visible= "V" in video_prompt_type_value and "A" in video_prompt_type_value and not "U" in video_prompt_type_value
                     )
@@ -7788,9 +7788,9 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                             video_guide_outpainting_bottom = gr.Slider(0, 100, value= video_guide_outpainting_list[1], step=5, label="Bottom %", show_reset_button= False)
                             video_guide_outpainting_left = gr.Slider(0, 100, value= video_guide_outpainting_list[2], step=5, label="Left %", show_reset_button= False)
                             video_guide_outpainting_right = gr.Slider(0, 100, value= video_guide_outpainting_list[3], step=5, label="Right %", show_reset_button= False)
-                # image_mask = gr.Image(label= "Image Mask Area (for Inpainting, white = Control Area, black = Unchanged)", type ="pil", visible= image_mode_value==1 and "V" in video_prompt_type_value and "A" in video_prompt_type_value and not "U" in video_prompt_type_value , height = gallery_height, value= ui_defaults.get("image_mask", None))
-                image_mask = gr.Image(label= "Image Mask Area (for Inpainting, white = Control Area, black = Unchanged)", type ="pil", visible= False, height = gallery_height, value= ui_defaults.get("image_mask", None))
-                video_mask = gr.Video(label= "Video Mask Area (for Inpainting, white = Control Area, black = Unchanged)", visible= (not image_outputs) and "V" in video_prompt_type_value and "A" in video_prompt_type_value and not "U" in video_prompt_type_value , height = gallery_height, value= ui_defaults.get("video_mask", None))
+                # image_mask = gr.Image(label= "Image Mask Area (for Inpainting, white = Control Area, black = Unchanged)", type ="pil", visible= image_mode_value==1 and "V" in video_prompt_type_value and "A" in video_prompt_type_value and not "U" in video_prompt_type_value , height = gallery_height, value= ui_defaults.get("image_mask", None)) 
+                image_mask = gr.Image(label= "Image Mask Area (for Inpainting, white = Control Area, black = Unchanged)", type ="pil", visible= False, height = gallery_height, value= ui_defaults.get("image_mask", None)) 
+                video_mask = gr.Video(label= "Video Mask Area (for Inpainting, white = Control Area, black = Unchanged)", visible= (not image_outputs) and "V" in video_prompt_type_value and "A" in video_prompt_type_value and not "U" in video_prompt_type_value , height = gallery_height, value= ui_defaults.get("video_mask", None)) 
 
                 mask_expand = gr.Slider(-10, 50, value=ui_defaults.get("mask_expand", 0), step=1, label="Expand / Shrink Mask Area", visible= "V" in video_prompt_type_value and "A" in video_prompt_type_value and not "U" in video_prompt_type_value )
 
@@ -7798,12 +7798,12 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                 image_refs_label = "Start Image" if hunyuan_video_avatar else ("Reference Image" if image_refs_single_image_mode else "Reference Images")  + (" (each Image will be associated to a Sliding Window)" if infinitetalk else "")
                 image_refs_row, image_refs, image_refs_extra = get_image_gallery(label= image_refs_label, value = ui_defaults.get("image_refs", None), visible= "I" in video_prompt_type_value, single_image_mode=image_refs_single_image_mode)
 
-                frames_positions = gr.Text(value=ui_defaults.get("frames_positions","") , visible= "F" in video_prompt_type_value, scale = 2, label= "Positions of Injected Frames (1=first, L=last of a window) no position for other Image Refs)" )
+                frames_positions = gr.Text(value=ui_defaults.get("frames_positions","") , visible= "F" in video_prompt_type_value, scale = 2, label= "Positions of Injected Frames (1=first, L=last of a window) no position for other Image Refs)" ) 
                 image_refs_relative_size = gr.Slider(20, 100, value=ui_defaults.get("image_refs_relative_size", 50), step=1, label="Rescale Internaly Image Ref (% in relation to Output Video) to change Output Composition", visible = model_def.get("any_image_refs_relative_size", False) and image_outputs)
 
                 no_background_removal = model_def.get("no_background_removal", False) or image_ref_choices is None
-                background_removal_label = model_def.get("background_removal_label", "Remove Background behind People / Objects")
-
+                background_removal_label = model_def.get("background_removal_label", "Remove Background behind People / Objects") 
+ 
                 remove_background_images_ref = gr.Dropdown(
                     choices=[
                         ("Keep Backgrounds behind all Reference Images", 0),
@@ -7896,7 +7896,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                 elif fit_canvas == 2:
                     label = "Output Resolution (Input Images wil be Cropped if the W/H ratio is different)"
                 else:
-                    label = "Resolution Budget (Pixels will be reallocated to preserve Inputs W/H ratio)"
+                    label = "Resolution Budget (Pixels will be reallocated to preserve Inputs W/H ratio)" 
                 current_resolution_choice = ui_defaults.get("resolution","832x480") if update_form or last_resolution is None else last_resolution
                 model_resolutions = model_def.get("resolutions", None)
                 resolution_choices, current_resolution_choice = get_resolution_choices(current_resolution_choice, model_resolutions)
@@ -7920,11 +7920,11 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                     video_length = gr.Slider(5, 193, value=ui_defaults.get("video_length", get_max_frames(81)), step=4, label="Number of frames (16 = 1s), locked", interactive= False, visible = True)
                 else:
                     min_frames, frames_step, _ = get_model_min_frames_and_step(base_model_type)
-
+                    
                     current_video_length = ui_defaults.get("video_length", 81 if get_model_family(base_model_type)=="wan" else 97)
 
                     computed_fps = get_computed_fps(ui_defaults.get("force_fps",""), base_model_type , ui_defaults.get("video_guide", None), ui_defaults.get("video_source", None))
-                    video_length = gr.Slider(min_frames, get_max_frames(737 if test_any_sliding_window(base_model_type) else 337), value=current_video_length,
+                    video_length = gr.Slider(min_frames, get_max_frames(737 if test_any_sliding_window(base_model_type) else 337), value=current_video_length, 
                          step=frames_step, label=compute_video_length_label(computed_fps, current_video_length) , visible = True, interactive= True)
 
             with gr.Row(visible = not lock_inference_steps) as inference_steps_row:                                       
@@ -8218,7 +8218,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                             sliding_window_overlap_noise = gr.Slider(0, 150, value=ui_defaults.get("sliding_window_overlap_noise",20), step=1, label="Noise to be added to overlapped frames to reduce blur effect", visible = False)
                             sliding_window_discard_last_frames = gr.Slider(0, 20, value=ui_defaults.get("sliding_window_discard_last_frames", 0), step=4, label="Discard Last Frames of a Window (that may have bad quality)", visible = True)
                         else: # Vace, Multitalk
-                            sliding_window_defaults = model_def.get("sliding_window_defaults", {})
+                            sliding_window_defaults = model_def.get("sliding_window_defaults", {})                            
                             sliding_window_size = gr.Slider(5, get_max_frames(257), value=ui_defaults.get("sliding_window_size", 129), step=4, label="Sliding Window Size")
                             sliding_window_overlap = gr.Slider(sliding_window_defaults.get("overlap_min", 1), sliding_window_defaults.get("overlap_max", 97), value=ui_defaults.get("sliding_window_overlap",sliding_window_defaults.get("overlap_default", 5)), step=sliding_window_defaults.get("overlap_step", 4), label="Windows Frames Overlap (needed to maintain continuity between windows, a higher value will require more windows)")
                             sliding_window_color_correction_strength = gr.Slider(0, 1, value=ui_defaults.get("sliding_window_color_correction_strength",0), step=0.01, label="Color Correction Strength (match colors of new window with previous one, 0 = disabled)", visible = True)
@@ -8418,7 +8418,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                                       video_guide_outpainting_checkbox, video_guide_outpainting_row, show_advanced, video_info_to_control_video_btn, video_info_to_video_source_btn, sample_solver_row,
                                       video_buttons_row, image_buttons_row, video_postprocessing_tab, audio_remuxing_tab, PP_MMAudio_row, PP_custom_audio_row, 
                                       video_info_to_start_image_btn, video_info_to_end_image_btn, video_info_to_reference_image_btn, video_info_to_image_guide_btn, video_info_to_image_mask_btn,
-                                      NAG_col, remove_background_sound , speakers_locations_row, embedded_guidance_row, guidance_phases_row, guidance_row, resolution_group, cfg_free_guidance_col, control_net_weights_row, guide_selection_row, image_mode_tabs,
+                                      NAG_col, remove_background_sound , speakers_locations_row, embedded_guidance_row, guidance_phases_row, guidance_row, resolution_group, cfg_free_guidance_col, control_net_weights_row, guide_selection_row, image_mode_tabs, 
                                       min_frames_if_references_col, video_prompt_type_alignment, prompt_enhancer_btn, tab_inpaint, tab_t2v] + image_start_extra + image_end_extra + image_refs_extra #  presets_column,
         if update_form:
             locals_dict = locals()
@@ -8439,16 +8439,16 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
             audio_prompt_type_remux.change(fn=refresh_audio_prompt_type_remux, inputs=[state, audio_prompt_type, audio_prompt_type_remux], outputs=[audio_prompt_type])
             remove_background_sound.change(fn=refresh_remove_background_sound, inputs=[state, audio_prompt_type, remove_background_sound], outputs=[audio_prompt_type])
             audio_prompt_type_sources.change(fn=refresh_audio_prompt_type_sources, inputs=[state, audio_prompt_type, audio_prompt_type_sources], outputs=[audio_prompt_type, audio_guide, audio_guide2, speakers_locations_row, remove_background_sound])
-            image_prompt_type_radio.change(fn=refresh_image_prompt_type_radio, inputs=[state, image_prompt_type, image_prompt_type_radio], outputs=[image_prompt_type, image_start_row, image_end_row, video_source, keep_frames_video_source, image_prompt_type_endcheckbox], show_progress="hidden" )
-            image_prompt_type_endcheckbox.change(fn=refresh_image_prompt_type_endcheckbox, inputs=[state, image_prompt_type, image_prompt_type_radio, image_prompt_type_endcheckbox], outputs=[image_prompt_type, image_end_row] )
+            image_prompt_type_radio.change(fn=refresh_image_prompt_type_radio, inputs=[state, image_prompt_type, image_prompt_type_radio], outputs=[image_prompt_type, image_start_row, image_end_row, video_source, keep_frames_video_source, image_prompt_type_endcheckbox], show_progress="hidden" ) 
+            image_prompt_type_endcheckbox.change(fn=refresh_image_prompt_type_endcheckbox, inputs=[state, image_prompt_type, image_prompt_type_radio, image_prompt_type_endcheckbox], outputs=[image_prompt_type, image_end_row] ) 
             video_prompt_type_image_refs.input(fn=refresh_video_prompt_type_image_refs, inputs = [state, video_prompt_type, video_prompt_type_image_refs,image_mode], outputs = [video_prompt_type, image_refs_row, remove_background_images_ref,  image_refs_relative_size, frames_positions,video_guide_outpainting_col], show_progress="hidden")
-            video_prompt_type_video_guide.input(fn=refresh_video_prompt_type_video_guide,     inputs = [state, gr.State(""),   video_prompt_type, video_prompt_type_video_guide,     image_mode, image_mask_guide, image_guide, image_mask], outputs = [video_prompt_type, video_guide, image_guide, keep_frames_video_guide, denoising_strength, video_guide_outpainting_col, video_prompt_type_video_mask, video_mask, image_mask, image_mask_guide, mask_expand, image_refs_row, video_prompt_type_video_custom_dropbox, video_prompt_type_video_custom_checkbox], show_progress="hidden")
-            video_prompt_type_video_guide_alt.input(fn=refresh_video_prompt_type_video_guide, inputs = [state, gr.State("alt"),video_prompt_type, video_prompt_type_video_guide_alt, image_mode, image_mask_guide, image_guide, image_mask], outputs = [video_prompt_type, video_guide, image_guide, keep_frames_video_guide, denoising_strength, video_guide_outpainting_col, video_prompt_type_video_mask, video_mask, image_mask, image_mask_guide, mask_expand, image_refs_row, video_prompt_type_video_custom_dropbox, video_prompt_type_video_custom_checkbox], show_progress="hidden")
+            video_prompt_type_video_guide.input(fn=refresh_video_prompt_type_video_guide,     inputs = [state, gr.State(""),   video_prompt_type, video_prompt_type_video_guide,     image_mode, image_mask_guide, image_guide, image_mask], outputs = [video_prompt_type, video_guide, image_guide, keep_frames_video_guide, denoising_strength, video_guide_outpainting_col, video_prompt_type_video_mask, video_mask, image_mask, image_mask_guide, mask_expand, image_refs_row, video_prompt_type_video_custom_dropbox, video_prompt_type_video_custom_checkbox], show_progress="hidden") 
+            video_prompt_type_video_guide_alt.input(fn=refresh_video_prompt_type_video_guide, inputs = [state, gr.State("alt"),video_prompt_type, video_prompt_type_video_guide_alt, image_mode, image_mask_guide, image_guide, image_mask], outputs = [video_prompt_type, video_guide, image_guide, keep_frames_video_guide, denoising_strength, video_guide_outpainting_col, video_prompt_type_video_mask, video_mask, image_mask, image_mask_guide, mask_expand, image_refs_row, video_prompt_type_video_custom_dropbox, video_prompt_type_video_custom_checkbox], show_progress="hidden") 
             # video_prompt_type_video_guide_alt.input(fn=refresh_video_prompt_type_video_guide_alt, inputs = [state, video_prompt_type, video_prompt_type_video_guide_alt, image_mode, image_mask_guide, image_guide, image_mask], outputs = [video_prompt_type, video_guide, image_guide, image_refs_row, denoising_strength, video_mask, mask_expand, image_mask_guide, image_guide, image_mask, keep_frames_video_guide ], show_progress="hidden")
             video_prompt_type_video_custom_dropbox.input(fn= refresh_video_prompt_type_video_custom_dropbox, inputs=[state, video_prompt_type, video_prompt_type_video_custom_dropbox], outputs = video_prompt_type)
             video_prompt_type_video_custom_checkbox.input(fn= refresh_video_prompt_type_video_custom_checkbox, inputs=[state, video_prompt_type, video_prompt_type_video_custom_checkbox], outputs = video_prompt_type)
 
-            video_prompt_type_video_mask.input(fn=refresh_video_prompt_type_video_mask, inputs = [state, video_prompt_type, video_prompt_type_video_mask, image_mode, image_mask_guide, image_guide, image_mask], outputs = [video_prompt_type, video_mask, image_mask_guide, image_guide, image_mask, mask_expand], show_progress="hidden")
+            video_prompt_type_video_mask.input(fn=refresh_video_prompt_type_video_mask, inputs = [state, video_prompt_type, video_prompt_type_video_mask, image_mode, image_mask_guide, image_guide, image_mask], outputs = [video_prompt_type, video_mask, image_mask_guide, image_guide, image_mask, mask_expand], show_progress="hidden") 
             video_prompt_type_alignment.input(fn=refresh_video_prompt_type_alignment, inputs = [state, video_prompt_type, video_prompt_type_alignment], outputs = [video_prompt_type])
             multi_prompts_gen_type.select(fn=refresh_prompt_labels, inputs=[multi_prompts_gen_type, image_mode], outputs=[prompt, wizard_prompt, image_end], show_progress="hidden")
             video_guide_outpainting_top.input(fn=update_video_guide_outpainting, inputs=[video_guide_outpainting, video_guide_outpainting_top, gr.State(0)], outputs = [video_guide_outpainting], trigger_mode="multiple" )
@@ -8655,7 +8655,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
                 outputs= [generate_btn, add_to_queue_btn, current_gen_column, current_gen_buttons_row]
             ).then(fn=activate_status,
                 inputs= [state],
-                outputs= [status_trigger],
+                outputs= [status_trigger],             
             ).then(fn=process_tasks,
                 inputs= [state],
                 outputs= [preview_trigger, output_trigger], 
@@ -8787,7 +8787,7 @@ def generate_video_tab(update_form = False, state_dict = None, ui_defaults = Non
             )
 
     return ( state, loras_choices, lset_name, resolution, refresh_form_trigger, save_form_trigger,
-            #  video_guide, image_guide, video_mask, image_mask, image_refs,
+            #  video_guide, image_guide, video_mask, image_mask, image_refs,   
             ) 
  
 
@@ -9780,7 +9780,7 @@ def create_ui():
 
                 with gr.Row():
                     (   state, loras_choices, lset_name, resolution, refresh_form_trigger, save_form_trigger
-                        # video_guide, image_guide, video_mask, image_mask, image_refs,
+                        # video_guide, image_guide, video_mask, image_mask, image_refs, 
                     ) = generate_video_tab(model_family=model_family, model_choice=model_choice, header=header, main = main, main_tabs =main_tabs)
             with gr.Tab("Guides", id="info") as info_tab:
                 generate_info_tab()
