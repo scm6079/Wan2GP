@@ -3198,7 +3198,7 @@ def cleanup_missing_files(gen):
     valid_items = [
         (file_path, file_settings_list[i] if i < len(file_settings_list) else None)
         for i, file_path in enumerate(file_list)
-        if os.path.exists(file_path)
+        if os.path.exists(file_path[0] if isinstance(file_path, tuple) else file_path)
     ]
 
     removed_count = original_count - len(valid_items)
@@ -3219,16 +3219,19 @@ def cleanup_missing_files(gen):
 def refresh_gallery(state): #, msg
     gen = get_gen_info(state)
 
-    # Clean up any missing files first
-    cleanup_missing_files(gen)
+    with lock:
+         # Clean up any missing files first
+         cleanup_missing_files(gen)
 
-    # gen["last_msg"] = msg
-    file_list = gen.get("file_list", None)      
-    choice = gen.get("selected",0)
-    header_text = gen.get("header_text", "")
-    in_progress = "in_progress" in gen
-    if gen.get("last_selected", True) and file_list is not None:
-        choice = max(len(file_list) - 1,0)  
+         file_list = gen.get("file_list", None)      
+         choice = gen.get("selected",0)
+         header_text = gen.get("header_text", "")
+         in_progress = "in_progress" in gen
+         if gen.get("last_selected", True) and file_list is not None:
+             choice = max(len(file_list) - 1,0)  
+
+         # Ensure choice is valid after cleanup
+         choice = min(choice, len(file_list) - 1 if file_list else 0)
 
     # Ensure choice is valid after cleanup
     choice = min(choice, len(file_list) - 1 if file_list else 0)
@@ -3358,8 +3361,9 @@ def select_video(state, input_file_list, event_data: gr.EventData):
     if len(file_list) > 0:
         configs = file_settings_list[choice]
         file_name = file_list[choice]
-        if not os.path.exists(file_name):
-            gr.Warning(f"File not found: {os.path.basename(file_name)}. It may have been moved or deleted.")
+        actual_file = file_name[0] if isinstance(file_name, tuple) else file_name
+        if not os.path.exists(actual_file):
+            gr.Warning(f"File not found: {os.path.basename(actual_file)}. It may have been moved or deleted.")
             visible = False
             return choice, get_default_video_info(), gr.update(visible=visible), gr.update(visible=visible), gr.update(visible=visible) , gr.update(visible=visible)
         values = [  os.path.basename(file_name)]
@@ -3369,16 +3373,20 @@ def select_video(state, input_file_list, event_data: gr.EventData):
         pp_values= []
         pp_labels = []
         extension = os.path.splitext(file_name)[-1]
-        if not has_video_file_extension(file_name):
-            img = Image.open(file_name)
-            width, height = img.size
-            is_image = True
-            frames_count = fps = 1
-            nb_audio_tracks =  0 
-        else:
-            fps, width, height, frames_count = get_video_info(file_name)
-            is_image = False
-            nb_audio_tracks = extract_audio_tracks(file_name,query_only = True)
+        try:
+            if not has_video_file_extension(file_name):
+                img = Image.open(file_name)
+                width, height = img.size
+                is_image = True
+                frames_count = fps = 1
+                nb_audio_tracks = 0
+            else:
+                fps, width, height, frames_count = get_video_info(file_name)
+                is_image = False
+                nb_audio_tracks = extract_audio_tracks(file_name, query_only=True)
+        except Exception as e:
+            gr.Warning(f"Error reading file: {os.path.basename(actual_file)}")
+            return choice, get_default_video_info(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
         if configs != None:
             video_model_name =  configs.get("type", "Unknown model")
             if "-" in video_model_name: video_model_name =  video_model_name[video_model_name.find("-")+2:] 
